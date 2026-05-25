@@ -380,7 +380,7 @@
       var btn = document.getElementById('f-submit');
       var msg = document.getElementById('f-msg');
 
-      var emailRe = /^[^s@]+@[^s@]+.[^s@]+$/;
+     var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!nombre || !email || !emailRe.test(email)) {
         msg.style.display='block';
         msg.style.background='#fef2f2';
