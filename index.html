@@ -445,11 +445,7 @@ async function iniciarPago() {
 
   try {
     // ⚠️ Reemplazá con tu URL de Vercel
-    var res = await fetch('https://TU-PROYECTO.vercel.app/api/create-preference', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email })
-    });
+   var res = await fetch('https://landinpro-evenforge.vercel.app/api/create-preference', {
 
     var data = await res.json();
 
