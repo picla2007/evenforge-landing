@@ -1,8 +1,6 @@
-
 {
-  "name": "deliverflow-netlify",
-  "version": "1.0.0",
-  "dependencies": {
-    "nodemailer": "^6.9.13"
+  "functions": {
+    "api/create-preference.js": { "maxDuration": 10 },
+    "api/mp-webhook.js":        { "maxDuration": 15 }
   }
 }
