@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>¡Acceso Activado! — EvenFlow Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --surface: #13131a; --border: #1e1e2e;
+      --accent: #7c5cfc; --accent2: #00e5a0; --text: #f0eff6; --muted: #7070a0;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px; overflow: hidden;
+    }
+    .bg-glow {
+      position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,229,160,.12) 0%, transparent 70%);
+      z-index: 0; pointer-events: none;
+    }
 
+    .card {
+      position: relative; z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 52px 44px;
+      max-width: 520px; width: 100%;
+      text-align: center;
+      animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+      border-radius: 24px 24px 0 0;
+    }
+
+    .check-circle {
+      width: 80px; height: 80px;
+      background: rgba(0,229,160,.1);
+      border: 2px solid rgba(0,229,160,.3);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 28px;
+      animation: glow 2s ease infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 0 12px rgba(0,229,160,.2); }
+      to   { box-shadow: 0 0 32px rgba(0,229,160,.45); }
+    }
+    .check-circle svg { color: var(--accent2); }
+
+    h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 2rem; letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    .sub {
+      color: var(--muted); line-height: 1.6; margin-bottom: 36px;
+      font-size: .95rem;
+    }
+
+    .product-link-box {
+      background: rgba(124,92,252,.08);
+      border: 1px solid rgba(124,92,252,.25);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 28px;
+    }
+    .product-link-label {
+      font-size: .75rem; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 10px; font-weight: 500;
+    }
+    .product-link-url {
+      font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+      color: var(--text); word-break: break-all; margin-bottom: 14px;
+    }
+
+    .btn-access {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 15px;
+      background: var(--accent);
+      color: #fff; border: none; border-radius: 12px;
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem;
+      cursor: pointer; text-decoration: none;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 0 28px rgba(124,92,252,.3);
+    }
+    .btn-access:hover { transform: translateY(-2px); box-shadow: 0 4px 36px rgba(124,92,252,.5); }
+
+    .email-note {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 18px; font-size: .83rem; color: var(--muted);
+    }
+
+    .pending-state { display: none; }
+    .pending-state .check-circle { background: rgba(255,165,0,.1); border-color: rgba(255,165,0,.3); }
+    .pending-state .check-circle svg { color: #ffa500; }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <div class="card" id="approved-card">
+    <div class="check-circle">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </div>
+
+    <h1>¡Pago confirmado!</h1>
+    <p class="sub">Tu acceso a EvenFlow Pro fue activado. También te enviamos un email con este link por si lo necesitás más adelante.</p>
+
+    <div class="product-link-box">
+      <div class="product-link-label">🚀 Tu acceso</div>
+      <div class="product-link-url">evenflow-pro-single.netlify.app</div>
+      <a href="https://evenflow-pro-single.netlify.app" target="_blank" class="btn-access">
+        Acceder a EvenFlow Pro →
+      </a>
+    </div>
+
+    <div class="email-note">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+      También revisá tu email — te enviamos el link de acceso
+    </div>
+  </div>
+
+  <!-- Estado pendiente (transferencia / ticket) -->
+  <div class="card pending-state" id="pending-card" style="display:none">
+    <div class="check-circle" style="background:rgba(255,165,0,.1);border-color:rgba(255,165,0,.3)">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ffa500" stroke-width="2.5">
+        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+      </svg>
+    </div>
+    <h1>Pago en proceso</h1>
+    <p class="sub">Tu pago está siendo procesado. Una vez confirmado, recibirás el acceso por email automáticamente. Puede demorar hasta 30 minutos.</p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status') || params.get('collection_status');
+
+    if (status === 'pending') {
+      document.getElementById('approved-card').style.display = 'none';
+      document.getElementById('pending-card').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
