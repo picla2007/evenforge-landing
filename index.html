@@ -397,8 +397,11 @@
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           mode: 'no-cors',
-          body: JSON.stringify({ nombre, email, whatsapp, timestamp: new Date().toISOString(), template: 'event', utm_source: utmParams.get('utm_source'), utm_campaign: utmParams.get('utm_campaign') })
-        }).catch(()=>{});
+          body: JSON.stringify({
+  items: [{ title: 'EvenForge Pro', unit_price: 285000, quantity: 1 }],
+  payer_email: email,
+  external_reference: 'landing_' + Date.now()
+})
       
         if (typeof fbq !== 'undefined') fbq('track', 'Lead');
       
