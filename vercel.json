@@ -1,6 +1,6 @@
 {
   "functions": {
     "api/create-preference.js": { "maxDuration": 10 },
-    "api/mp-webhook.js":        { "maxDuration": 15 }
+    "api/mp-webhook.js": { "maxDuration": 15 }
   }
 }
