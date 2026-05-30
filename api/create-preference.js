@@ -1,87 +1,112 @@
-// netlify/functions/create-preference.js
-// En Netlify las funciones usan exports.handler en lugar de module.exports
+// api/create-preference.js
+// Vercel Serverless Function — crea preferencia de pago en MercadoPago
+//
+// Variables de entorno requeridas (Vercel → Settings → Environment Variables):
+//   MP_ACCESS_TOKEN  → Access Token de producción (APP_USR-...)
+//   SITE_URL         → URL de tu sitio sin barra final (ej: https://evenforge.vercel.app)
+//   MP_SANDBOX       → "true" para testing, "false" o vacío para producción
 
-const nodemailer = require('nodemailer'); // solo para referencia, no se usa aquí
+module.exports = async (req, res) => {
+  // ── CORS ──────────────────────────────────────────────────
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 
-exports.handler = async function (event) {
-  // CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+  const { MP_ACCESS_TOKEN, SITE_URL, MP_SANDBOX } = process.env;
+
+  if (!MP_ACCESS_TOKEN || !SITE_URL) {
+    console.error('[create-preference] Faltan MP_ACCESS_TOKEN o SITE_URL');
+    return res.status(500).json({ error: 'Configuración incompleta en el servidor' });
   }
 
-  let email;
-  try {
-    const body = JSON.parse(event.body || '{}');
-    email = body.email;
-  } catch {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Body inválido' }) };
-  }
+  // ── Leer body ─────────────────────────────────────────────
+  // Acepta tanto { items, payer_email } (order bumps dinámicos)
+  // como { email } (compatibilidad hacia atrás)
+  const body = req.body || {};
+  const payer_email        = body.payer_email || body.email || null;
+  const external_reference = body.external_reference || null;
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Email inválido' }) };
-  }
-
-  const APP_URL = process.env.APP_URL;
-  const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
-
-  if (!MP_ACCESS_TOKEN) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'MP_ACCESS_TOKEN no configurado' }) };
-  }
-
-  const preference = {
-    items: [{
-      id: 'evenflow-pro-001',
-      title: 'EvenFlow Pro — Acceso completo',
-      description: 'Acceso permanente a EvenFlow Pro',
-      quantity: 1,
+  // Soporte para items dinámicos (order bumps) o precio fijo
+  let items;
+  if (Array.isArray(body.items) && body.items.length > 0) {
+    items = body.items.map((item) => ({
+      id:          item.id || 'evenforge-pro',
+      title:       String(item.title || 'EvenForge Pro').slice(0, 256),
+      description: item.description || 'Acceso a EvenForge Pro',
+      quantity:    Number(item.quantity) || 1,
       currency_id: 'ARS',
-      unit_price: parseFloat(process.env.PRODUCT_PRICE || '15000')
-    }],
-    payer: { email },
+      unit_price:  Number(item.unit_price),
+    }));
+  } else {
+    // Fallback: precio fijo desde variable de entorno
+    items = [{
+      id:          'evenforge-pro-001',
+      title:       'EvenForge Pro — Acceso completo',
+      description: 'Acceso permanente a EvenForge Pro',
+      quantity:    1,
+      currency_id: 'ARS',
+      unit_price:  parseFloat(process.env.PRODUCT_PRICE || '285000'),
+    }];
+  }
+
+  // ── Armar preferencia ─────────────────────────────────────
+  const preference = {
+    items,
+    payer: payer_email ? { email: payer_email } : undefined,
+    external_reference: external_reference || (payer_email ? payer_email + '|' + Date.now() : 'ef_' + Date.now()),
+
     back_urls: {
-      success: APP_URL + '/success.html?status=approved',
-      failure: APP_URL + '/?error=pago_rechazado',
-      pending: APP_URL + '/success.html?status=pending'
+      success: SITE_URL + '/success.html?status=approved',
+      failure: SITE_URL + '/?error=pago_rechazado',
+      pending: SITE_URL + '/success.html?status=pending',
     },
     auto_return: 'approved',
-    notification_url: APP_URL + '/.netlify/functions/webhook',
-    statement_descriptor: 'EVENFLOW PRO',
-    external_reference: email + '|' + Date.now()
+
+    // ← URL correcta para Vercel (antes apuntaba a /.netlify/functions/webhook)
+    notification_url: SITE_URL + '/api/mp-webhook',
+
+    statement_descriptor: 'EVENFORGE PRO',
   };
 
+  console.log('[create-preference] Items:', items.map((i) => i.title).join(', '));
+  console.log('[create-preference] Payer:', payer_email || 'sin email');
+
+  // ── Llamar a la API de MP ─────────────────────────────────
   try {
-    const res = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + MP_ACCESS_TOKEN
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + MP_ACCESS_TOKEN,
       },
-      body: JSON.stringify(preference)
+      body: JSON.stringify(preference),
     });
 
-    const data = await res.json();
+    const data = await mpRes.json();
 
-    if (!res.ok) {
-      console.error('MP error:', data);
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Error en MercadoPago' }) };
+    if (!mpRes.ok) {
+      console.error('[create-preference] Error MP:', mpRes.status, JSON.stringify(data));
+      return res.status(500).json({ error: data.message || 'Error en MercadoPago' });
     }
 
-    const url = process.env.MP_SANDBOX === 'true' ? data.sandbox_init_point : data.init_point;
-    return { statusCode: 200, headers, body: JSON.stringify({ url }) };
+    const useSandbox  = MP_SANDBOX === 'true';
+    const checkoutUrl = useSandbox ? data.sandbox_init_point : data.init_point;
+
+    console.log('[create-preference] Preferencia creada:', data.id, '| Sandbox:', useSandbox);
+
+    return res.status(200).json({
+      checkout_url:  checkoutUrl,   // ← landing usa este campo
+      url:           checkoutUrl,   // ← compatibilidad hacia atrás
+      preference_id: data.id,
+    });
 
   } catch (err) {
-    console.error('Error:', err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Error interno' }) };
+    console.error('[create-preference] Error interno:', err.message);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
